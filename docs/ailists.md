@@ -56,14 +56,14 @@ AI lists lack native language constructs such as if/else/endif and while loops, 
 
 The primitive building blocks are:
 
-* Labels: A label is a marker in the AI list. It is given a number so it can be identified. This number should be unique if it marks the start of a while loop. If it's the destination of an if statement then it can be a reused number.
-* Goto next: Jumps to the next label with the given ID.
-* Goto first: Jumps to the first label in the AI list with the given ID. These are used for loops.
-* If statements: Many commands will check for a condition then jump to the next label with the given ID if the condition passes. If the condition fails execution continues from the next command as normal.
-* Try statements: These commands make the character attempt to do something and then go to the label if successful, otherwise execution continues from the next command. An example is pathfinding; if the character can't find a path to the destination then it will fail.
+- Labels: A label is a marker in the AI list. It is given a number so it can be identified. This number should be unique if it marks the start of a while loop. If it's the destination of an if statement then it can be a reused number.
+- Goto next: Jumps to the next label with the given ID.
+- Goto first: Jumps to the first label in the AI list with the given ID. These are used for loops.
+- If statements: Many commands will check for a condition then jump to the next label with the given ID if the condition passes. If the condition fails execution continues from the next command as normal.
+- Try statements: These commands make the character attempt to do something and then go to the label if successful, otherwise execution continues from the next command. An example is pathfinding; if the character can't find a path to the destination then it will fail.
 
 This project provides some macros to help give some structure to the AI lists:
 
-* `beginloop`: Is just the same as declaring a `label` followed by `yield`.
-* `endloop`: Is literally just a `goto_first`, but endloop was a more meaningful name given the intention.
-* `reloop`: Used when a loop has multiple points that jump back to the top of the loop. Like `endloop`, it's also the same as a `goto_first` but with a more meaningful name.
+- `beginloop`: Is just the same as declaring a `label` followed by `yield`.
+- `endloop`: Is literally just a `goto_first`, but endloop was a more meaningful name given the intention.
+- `reloop`: Used when a loop has multiple points that jump back to the top of the loop. Like `endloop`, it's also the same as a `goto_first` but with a more meaningful name.

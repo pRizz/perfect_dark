@@ -2,11 +2,11 @@
 
 Chrs generally represent a person in the game. All of the following have chr structs allocated for them:
 
-* Human guards and allies
-* Maians
-* Skedar
-* Any players (Joanna/Velvet)
-* Multiplayer simulants
+- Human guards and allies
+- Maians
+- Skedar
+- Any players (Joanna/Velvet)
+- Multiplayer simulants
 
 Surprisingly, the eyespy also has its own chr struct.
 
@@ -20,10 +20,10 @@ The `g_ChrSlots` array holds an allocation of chr structs which is used for all 
 
 The allocation is:
 
-* Sum of chrs to be placed in the stage according to its setup file
-* Plus 1 for the player
-* Plus however many is needed for a co-op player, co-op buddies or counter-op player
-* Plus 10 spare
+- Sum of chrs to be placed in the stage according to its setup file
+- Plus 1 for the player
+- Plus however many is needed for a co-op player, co-op buddies or counter-op player
+- Plus 10 spare
 
 When the stage is started there will be 10 free slots. When chrs are spawned a slot becomes used, and when corpses are reaped (removed) their slot becomes free. Chrs cannot be spawned if there are no free slots.
 
@@ -31,8 +31,8 @@ When the stage is started there will be 10 free slots. When chrs are spawned a s
 
 These are two arrays which work together to allow the engine to quickly resolve a chr number to its struct.
 
-* The `g_Chrnums` array is a list of chr numbers, kept in ascending order. It is kept in sync with `g_ChrSlots`, so every used slot in `g_ChrSlots` will have its chrnum in `g_Chrnums`.
-* The `g_ChrIndexes` array mirrors the `g_Chrnums` array but stores the slot index of the chr struct. Whenever `g_Chrnums` is resorted, `g_ChrIndexes` is also updated with the same movements.
+- The `g_Chrnums` array is a list of chr numbers, kept in ascending order. It is kept in sync with `g_ChrSlots`, so every used slot in `g_ChrSlots` will have its chrnum in `g_Chrnums`.
+- The `g_ChrIndexes` array mirrors the `g_Chrnums` array but stores the slot index of the chr struct. Whenever `g_Chrnums` is resorted, `g_ChrIndexes` is also updated with the same movements.
 
 To resolve a chr number to its struct, the `g_Chrnums` array is bisected until the chrnum is found. The index of that chrnum in the `g_Chrnums` array is then used to grab the `g_ChrIndexes` value. That value is the index into `g_ChrSlots`.
 
@@ -42,8 +42,8 @@ The `g_BgChrs` array is similar to `g_ChrSlots` in that it stores entire chr str
 
 The allocation is:
 
-* Sum of background (10xx) and environmental (14xx) AI lists from the stage's setup file
-* Plus 1 for something reserved
+- Sum of background (10xx) and environmental (14xx) AI lists from the stage's setup file
+- Plus 1 for something reserved
 
 There are no free slots in this allocation, and slots are not changed during gameplay. The use of the reserved slot is not yet known.
 
@@ -53,10 +53,10 @@ Registration is the term given when a slot and chrnum are assigned. Likewise, de
 
 Chr numbers are signed shorts which means they have a range of -32,768 to 32,767, however anything negative is considered to be a free slot.
 
-* **0 to 3,999** are for manual allocation (ie. most/all guards)
-* **4,000 to 4,899** are for BG chrs
-* **4,900** is the ID of the reserved BG chr
-* **5,000 to 32,767** are for automatic allocation
+- **0 to 3,999** are for manual allocation (ie. most/all guards)
+- **4,000 to 4,899** are for BG chrs
+- **4,900** is the ID of the reserved BG chr
+- **5,000 to 32,767** are for automatic allocation
 
 Whenever a chr is registered, a chrnum is automatically generated for it in the 5,000+ range. In most cases the game then assigns a manual chrnum to the chr (from zero onwards). This happens for all placed guards in a setup file. For chrs that spawn during gameplay it's up to the AI list scripting to assign a new chrnum if it wants to.
 

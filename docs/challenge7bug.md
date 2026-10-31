@@ -12,29 +12,35 @@ bgReset is called while the screen is black after accepting the challenge. It's 
 
 The problem starts when loading the section 2 data, approximately half way into the function. Section 2 is a section of the BG file that is very simple; it's just a compressed list of texture IDs. Let's start by looking at the fix the developers made:
 
-    #if VERSION >= VERSION_NTSC_FINAL
-        // Fixed version
-        section2 = mempAlloc(inflatedsize + 0x8000, MEMPOOL_STAGE);
-        scratch = (u32)section2 + 0x8000;
-    #else
-        // Buggy version
-        section2 = mempAlloc(inflatedsize + 0x800, MEMPOOL_STAGE);
-        scratch = (u32)section2 + 0x800;
-    #endif
+```
+#if VERSION >= VERSION_NTSC_FINAL
+    // Fixed version
+    section2 = mempAlloc(inflatedsize + 0x8000, MEMPOOL_STAGE);
+    scratch = (u32)section2 + 0x8000;
+#else
+    // Buggy version
+    section2 = mempAlloc(inflatedsize + 0x800, MEMPOOL_STAGE);
+    scratch = (u32)section2 + 0x800;
+#endif
+```
 
 This code is allocating space in memory for section 2. It's intentionally overallocating it and setting up a scratch pointer into a later part of that space. We can see that the buggy code was adding an extra 0x800 to the allocation, and their fix was to bump this up to 0x8000. This doesn't give any answers though, so let's see how this allocation is used.
 
-    // Load compressed data from ROM to scratch
-	bgLoadFile((u8 *)scratch, section2start + 4, ((section2compsize - 1) | 0xf) + 1);
+```
+// Load compressed data from ROM to scratch
+bgLoadFile((u8 *)scratch, section2start + 4, ((section2compsize - 1) | 0xf) + 1);
+```
 
-bgLoadFile's arguments are u8 *destination, u32 bgfileoffset, u32 length. It loads part of a BG file from the ROM and writes it to the destination, in this case the scratch pointer. The + 4 in the second argument is just skipping past a section header so it copies the body of the section only. And the last argument is the compressed size, rounded up to the next 16-byte boundary. This rounding is required because the N64 requires loads from the ROM to be in increments of 16 bytes. To put it simply, this function is copying the compressed data from the ROM to the scratch pointer.
+bgLoadFile's arguments are u8 \*destination, u32 bgfileoffset, u32 length. It loads part of a BG file from the ROM and writes it to the destination, in this case the scratch pointer. The + 4 in the second argument is just skipping past a section header so it copies the body of the section only. And the last argument is the compressed size, rounded up to the next 16-byte boundary. This rounding is required because the N64 requires loads from the ROM to be in increments of 16 bytes. To put it simply, this function is copying the compressed data from the ROM to the scratch pointer.
 
 Hold up. Let's do some math. How much space is available in the scratch? For the buggy version the pointer is 0x800 into the allocation, and the allocation is inflatedsize + 0x800, so we know we have inflatedsize available to place the compressed buffer. For the fixed version the pointer is 0x8000 into the allocation, and the allocation is inflatedsize + 0x8000, so we end up with... also just inflatedsize. The exact same amount of space is available in both versions. All it's done is move the scratch further away from the start of the allocation and increased the allocation accordingly.
 
-	// Inflate section 2 to the start of the buffer
-	bgInflate((u8 *)scratch, section2, section2compsize);
+```
+// Inflate section 2 to the start of the buffer
+bgInflate((u8 *)scratch, section2, section2compsize);
+```
 
-bgInflate's arguments are u8 *source, u8 *destination, u32 compressedlength. It decompresses the source to the destination, which in this case is decompressing it to the start of the allocation. So maybe the buggy code had the two streams too close to each other, and the inflated stream was overwriting the compressed stream while it was still being decompressed? Sounds plausible. For this to happen, the inflated size would have to be at least 0x800 bytes. Maybe the Warehouse stage (used by Challenge 7) is the only file with a section 2 this big? Let's take a look.
+bgInflate's arguments are u8 \*source, u8 \*destination, u32 compressedlength. It decompresses the source to the destination, which in this case is decompressing it to the start of the allocation. So maybe the buggy code had the two streams too close to each other, and the inflated stream was overwriting the compressed stream while it was still being decompressed? Sounds plausible. For this to happen, the inflated size would have to be at least 0x800 bytes. Maybe the Warehouse stage (used by Challenge 7) is the only file with a section 2 this big? Let's take a look.
 
 0x3c. The inflated size of the texture list is just 0x3c bytes. That's less than 1/30th of the allocation. There's no way this is writing over the compressed stream.
 
@@ -48,10 +54,10 @@ The Nintendo 64 has 4MB of onboard memory. This is addressable in the range 0x80
 
 A very basic view of the memory layout is as follows:
 
-* Onboard: 0x80000000 to 0x800ad1c0 = immovable code and data
-* Onboard: 0x800ad1c0 to 0x80220000 = onboard memory bank (heap)
-* Onboard: 0x80220000 to 0x80400000 = more immovable code and data
-* Expansion: 0x80400000 to 0x80800000 = expansion pak memory bank (a second heap)
+- Onboard: 0x80000000 to 0x800ad1c0 = immovable code and data
+- Onboard: 0x800ad1c0 to 0x80220000 = onboard memory bank (heap)
+- Onboard: 0x80220000 to 0x80400000 = more immovable code and data
+- Expansion: 0x80400000 to 0x80800000 = expansion pak memory bank (a second heap)
 
 When the game needs to allocate memory it asks the memory system to allocate a certain size. The memory system tries to allocate it out of the onboard bank. These allocations are made left to right. If there's not enough space available in the onboard bank then it tries the expansion pak bank in the same way.
 
@@ -63,9 +69,11 @@ You can think of each memory bank as a block containing two pointers: a left and
 
 We'll step through the code again, starting from a couple of statements earlier than we did above, and this time calculating the actual values that are used and dumping memory values.
 
-    inflatedsize = (*(u16 *)&header[0] & 0x7fff) - 1;
-    section2compsize = *(u16 *)&header[2];
-    inflatedsize = (inflatedsize | 0xf) + 1;
+```
+inflatedsize = (*(u16 *)&header[0] & 0x7fff) - 1;
+section2compsize = *(u16 *)&header[2];
+inflatedsize = (inflatedsize | 0xf) + 1;
+```
 
 This is reading the inflated and compressed sizes from a header within the file. inflatedsize is rounded up to the next 16-byte alignment.
 
@@ -73,20 +81,24 @@ The inflatedsize value in the header is 0x3c, which after alignment becomes 0x40
 
 And the section2compsize value in the header is 0x44, which is bigger than the inflated size. That's not surprising - the data is a list of unique texture IDs. There's no repetition and not much data, so this wouldn't compress very well.
 
-    section2 = mempAlloc(inflatedsize + 0x800, MEMPOOL_STAGE);
-    scratch = (u32)section2 + 0x800;
+```
+section2 = mempAlloc(inflatedsize + 0x800, MEMPOOL_STAGE);
+scratch = (u32)section2 + 0x800;
+```
 
 Because inflatedsize is 0x40, the allocation is 0x840. And scratch points at 0x800 into the allocation, which is 0x40 from the end.
 
 Prior to this allocation being made, the memory system's onboard bank has the following values:
 
-* Left pointer = 0x80211c70
-* Right pointer = 0x802124b0
-* (free space = 0x840)
+- Left pointer = 0x80211c70
+- Right pointer = 0x802124b0
+- (free space = 0x840)
 
 The allocation is made from the onboard bank, which has just the amount of free space that's needed and is now completely full.
 
-	bgLoadFile((u8 *)scratch, section2start + 4, ((section2compsize - 1) | 0xf) + 1);
+```
+bgLoadFile((u8 *)scratch, section2start + 4, ((section2compsize - 1) | 0xf) + 1);
+```
 
 section2compsize is 0x44. But the value being passed to bgLoadFile is after alignment which is 0x50. So it's copying 0x50 bytes into a buffer of size 0x40. This normally wouldn't be an issue because the space to the right is usually unallocated, but because the allocation is flush against the end of the onboard memory bank the space to the right is in use and 0x10 bytes of it is being inadvertently overwritten.
 

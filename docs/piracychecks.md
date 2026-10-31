@@ -16,7 +16,7 @@ The decomp project wraps all decompiled piracy checks in `#if PIRACYCHECKS` stat
 
 **Payload:** Goes into an infinite loop so the system never boots.
 
-### __scHandleTasks
+### \_\_scHandleTasks
 
 **When Called:** On every frame.
 
@@ -32,7 +32,7 @@ The decomp project wraps all decompiled piracy checks in `#if PIRACYCHECKS` stat
 
 **Payload:** Corrupts `__scHandleTasks` by nopping the call to `__scAppendList` and some of the function arguments to `osRecvMesg`. Most likely results in a crash.
 
----
+______________________________________________________________________
 
 ### doorFinishClose
 
@@ -58,7 +58,7 @@ The decomp project wraps all decompiled piracy checks in `#if PIRACYCHECKS` stat
 
 **Payload:** Disables the ability for the player and other characters to go up or down slopes. This is done by nopping the `jr ra` instruction in `cdFindGroundInfoAtCyl`, which causes it to flow into the following function, which unconditionally returns false and only exists for this purpose.
 
----
+______________________________________________________________________
 
 ### chrsCheckForNoise
 
@@ -68,7 +68,7 @@ The decomp project wraps all decompiled piracy checks in `#if PIRACYCHECKS` stat
 
 **Payload:** Sets the Skedar King's body file number to zero, which causes the game to crash when loading Skedar Ruins or WAR.
 
----
+______________________________________________________________________
 
 ### lvGetSlowMotionType
 
@@ -94,7 +94,7 @@ The decomp project wraps all decompiled piracy checks in `#if PIRACYCHECKS` stat
 
 **Payload:** Nops `_memaFree` entirely, so any time that function is called it'll flow into the following function, which just returns. The effect this has is that the system is unable to free individual mema allocations which makes it unable to load rooms as you move throughout the level.
 
----
+______________________________________________________________________
 
 ### bgReset
 
@@ -112,7 +112,7 @@ The decomp project wraps all decompiled piracy checks in `#if PIRACYCHECKS` stat
 
 **Payload:** Surrounds the player in infinite explosions.
 
----
+______________________________________________________________________
 
 ### tagsReset
 
@@ -130,7 +130,7 @@ The decomp project wraps all decompiled piracy checks in `#if PIRACYCHECKS` stat
 
 **Payload:** Corrupts `tagsReset` by writing 4 bytes of 0xff.
 
----
+______________________________________________________________________
 
 ### menuTickTimers
 
@@ -148,7 +148,7 @@ The decomp project wraps all decompiled piracy checks in `#if PIRACYCHECKS` stat
 
 **Payload:** Corrupts `bgBuildTables` by adding a fixed amount to 16 bytes within that function.
 
----
+______________________________________________________________________
 
 ### glassDestroy
 
